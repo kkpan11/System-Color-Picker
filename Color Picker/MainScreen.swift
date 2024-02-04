@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 struct MainScreen: View {
 	@Default(.uppercaseHexColor) private var uppercaseHexColor
@@ -18,6 +19,9 @@ struct MainScreen: View {
 			BarView()
 			colorInputs
 			colorName
+			if SSApp.isFirstLaunch { // Note: We only show it on first launch as TipKit doesn't currently preserve the dismissed state. (macOS 14.3)
+				TipView(ColorPaletteTip())
+			}
 		}
 			.padding(9)
 			// 244 makes `HSL` always fit in the text field.
@@ -35,12 +39,15 @@ struct MainScreen: View {
 			.onChange(of: legacyColorSyntax) {
 				updateColorsFromPanel()
 			}
-			.onReceive(colorPanel.colorDidChangePublisher) {
+			.onReceive(colorPanel.colorDidChange) {
 				guard focusedTextField == nil else {
 					return
 				}
 
 				updateColorsFromPanel(preventUpdate: true)
+			}
+			.task {
+				try? Tips.configure()
 			}
 	}
 
@@ -356,5 +363,19 @@ private struct PalettesButton: View {
 					.labelStyle(.titleAndIcon)
 			}
 		}
+	}
+}
+
+private struct ColorPaletteTip: Tip {
+	var title: Text {
+		Text("Creating a Color Palette")
+	}
+
+	var message: Text? {
+		Text("To create a new color palette, click the third tab at the top of the window, click the \(Image(systemName: "ellipsis.circle")) button, and then select “New”.")
+	}
+
+	var image: Image? {
+		Image(systemName: "swatchpalette")
 	}
 }
